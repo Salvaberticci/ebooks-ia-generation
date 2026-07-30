@@ -1,0 +1,10 @@
+vendor/
+generados/*.pdf
+generados/*.html
+generados/.htaccess
+*.log
+.env
+test_*.php
+test_*.png
+test_*.jpg
+config.php

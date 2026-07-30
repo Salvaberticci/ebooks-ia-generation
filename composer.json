@@ -1,0 +1,7 @@
+{
+    "name": "ebooks/ia-generation",
+    "description": "Sistema de generacion de ebooks con IA",
+    "require": {
+        "tecnickcom/tcpdf": "^6.6"
+    }
+}
