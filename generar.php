@@ -136,6 +136,27 @@ try {
 
     echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
     flush();
+    // Test de conectividad antes del llamado
+    $groqHost = parse_url(GROQ_API_BASE, PHP_URL_HOST);
+    $dns = gethostbynamel($groqHost);
+    if ($dns === false) {
+        echo "            <div style='color:#e94560;'>  Error: No se pudo resolver el DNS de {$groqHost}. Verifica tu conexion a internet.</div>\n";
+        flush();
+        echo "            <div><span class='muted'>> Reintentando en 3 segundos...</span></div>\n";
+        flush();
+        sleep(3);
+    } else {
+        echo "            <div><span class='muted'>> DNS resuelto: " . implode(', ', $dns) . "</span></div>\n";
+        flush();
+    }
+    // Test TCP rapido
+    $fp = @fsockopen($groqHost, 443, $errno, $errstr, 5);
+    if ($fp) {
+        fclose($fp);
+    } else {
+            echo "            <div style='color:#e94560;'>  [TCP] No se pudo conectar a {$groqHost}:443 ({$errstr}). Firewall o proxy bloqueando.</div>\n";
+        flush();
+    }
     $tocResponse = API::generateText($tocPrompt);
 
     $capitulos = [];
