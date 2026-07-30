@@ -1,6 +1,13 @@
 <?php
 if (!class_exists('RateLimitException')) {
-    class RateLimitException extends Exception {}
+    class RateLimitException extends Exception {
+        private $waitTime = null;
+        public function __construct($message = '', $waitTime = null, $code = 0, Throwable $previous = null) {
+            parent::__construct($message, $code, $previous);
+            $this->waitTime = $waitTime;
+        }
+        public function getWaitTime() { return $this->waitTime; }
+    }
 }
 
 class GroqAPI
@@ -21,8 +28,8 @@ class GroqAPI
             } catch (RateLimitException $e) {
                 $attempts++;
                 if ($attempts >= MAX_RETRIES) throw $e;
-                $sleep = $attempts * 5;
-                sleep($sleep);
+                $wait = $e->getWaitTime() ?? ($attempts * 10);
+                sleep($wait);
             }
         }
 
@@ -32,6 +39,7 @@ class GroqAPI
     private static function call($payload)
     {
         $ch = curl_init(GROQ_API_BASE . '/chat/completions');
+        $responseHeaders = [];
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($payload),
@@ -47,6 +55,10 @@ class GroqAPI
             CURLOPT_TCP_KEEPALIVE => 1,
             CURLOPT_TCP_KEEPIDLE => 30,
             CURLOPT_TCP_KEEPINTVL => 10,
+            CURLOPT_HEADERFUNCTION => function($curl, $header) use (&$responseHeaders) {
+                $responseHeaders[] = $header;
+                return strlen($header);
+            },
         ]);
 
         $response = curl_exec($ch);
@@ -59,7 +71,14 @@ class GroqAPI
         }
 
         if ($httpCode === 429) {
-            throw new RateLimitException('Limite de velocidad alcanzado');
+            $retryAfter = null;
+            foreach ($responseHeaders as $header) {
+                if (preg_match('/Retry-After:\s*(\d+)/i', $header, $m)) {
+                    $retryAfter = (int)$m[1];
+                    break;
+                }
+            }
+            throw new RateLimitException('Limite de velocidad alcanzado', $retryAfter);
         }
 
         if ($httpCode !== 200) {
