@@ -40,6 +40,7 @@ class GroqAPI
     {
         $ch = curl_init(GROQ_API_BASE . '/chat/completions');
         $responseHeaders = [];
+        $verbose = fopen('php://temp', 'w+');
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($payload),
@@ -49,9 +50,11 @@ class GroqAPI
                 'Connection: keep-alive',
             ],
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => API_TIMEOUT,
-            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_VERBOSE => true,
+            CURLOPT_STDERR => $verbose,
             CURLOPT_HEADERFUNCTION => function($curl, $header) use (&$responseHeaders) {
                 $responseHeaders[] = $header;
                 return strlen($header);
@@ -61,10 +64,18 @@ class GroqAPI
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
+        rewind($verbose);
+        $verboseLog = stream_get_contents($verbose);
+        fclose($verbose);
         curl_close($ch);
 
+        $keyPreview = substr(GROQ_API_KEY, 0, 8) . '...';
+        $log = "Key: {$keyPreview} | DNS: " . implode(',', gethostbynamel(parse_url(GROQ_API_BASE, PHP_URL_HOST)) ?: ['?']) . " | Curl: {$error}";
+        error_log("[Groq Debug] {$log}");
+        error_log("[Groq Verbose] {$verboseLog}");
+
         if ($error) {
-            throw new Exception("Error de conexion: {$error}");
+            throw new Exception("Error de conexion ({$log}): {$error}");
         }
 
         if ($httpCode === 429) {
