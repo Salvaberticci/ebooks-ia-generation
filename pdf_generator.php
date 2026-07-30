@@ -1,5 +1,9 @@
 <?php
-require_once __DIR__ . '/vendor/tecnickcom/tcpdf/tcpdf.php';
+$tcpdfPath = __DIR__ . '/vendor/tecnickcom/tcpdf/tcpdf.php';
+if (!file_exists($tcpdfPath)) {
+    die('<h2 style="color:#e94560;">Error: Falta TCPDF</h2><p>Ejecutá <code>composer install</code> en el servidor o subí la carpeta <code>vendor/</code>.</p>');
+}
+require_once $tcpdfPath;
 
 function generarPDF($tema, $contenido, $idioma = 'es', $themeId = 'cyberpunk', $customColors = [], $tituloPortada = '')
 {

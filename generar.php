@@ -1,4 +1,15 @@
 <?php
+// Startup checks
+$required = [
+    __DIR__ . '/config.php' => 'Falta config.php — Copiá config.example.php a config.php',
+    __DIR__ . '/vendor/tecnickcom/tcpdf/tcpdf.php' => 'Falta TCPDF — Ejecutá composer install en el servidor',
+];
+foreach ($required as $file => $msg) {
+    if (!file_exists($file)) {
+        die("<h2 style='color:#e94560;font-family:sans-serif;'>Error de instalacion</h2><p style='font-family:sans-serif;'>$msg</p>");
+    }
+}
+
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/api.php';
 require_once __DIR__ . '/pdf_generator.php';
