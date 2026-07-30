@@ -1,8 +1,25 @@
 <?php
 class GroqAPI
 {
+    private static $log = [];
+
+    private static function log($msg)
+    {
+        self::$log[] = $msg;
+    }
+
+    public static function getDebugLog()
+    {
+        $out = self::$log;
+        self::$log = [];
+        return $out;
+    }
+
     public static function generateText($prompt)
     {
+        self::$log = [];
+        self::log('Iniciando generateText, prompt length: ' . strlen($prompt));
+
         $payload = [
             'model' => GROQ_MODEL,
             'messages' => [['role' => 'user', 'content' => $prompt]],
@@ -13,38 +30,35 @@ class GroqAPI
         $attempts = 0;
         $maxRetries = defined('MAX_RETRIES') ? MAX_RETRIES : 3;
 
-        $logId = uniqid();
-        error_log("[Groq:{$logId}] Iniciando generateText, prompt length: " . strlen($prompt));
-
         while ($attempts < $maxRetries) {
-            error_log("[Groq:{$logId}] Intento " . ($attempts + 1) . "/{$maxRetries}");
-            $result = self::call($payload, $logId);
+            self::log("Intento " . ($attempts + 1) . "/{$maxRetries}");
+            $result = self::call($payload);
             if ($result === false) {
                 $attempts++;
                 if ($attempts >= $maxRetries) {
-                    error_log("[Groq:{$logId}] Se agotaron los reintentos");
+                    self::log('Se agotaron los reintentos');
                     break;
                 }
                 $wait = $attempts * 5;
-                error_log("[Groq:{$logId}] Esperando {$wait}s antes de reintentar");
+                self::log("Esperando {$wait}s antes de reintentar");
                 sleep($wait);
                 continue;
             }
-            error_log("[Groq:{$logId}] Respuesta exitosa, length: " . strlen($result));
+            self::log('Respuesta exitosa, length: ' . strlen($result));
             return $result;
         }
 
         throw new Exception('No se pudo obtener respuesta de Groq tras ' . $maxRetries . ' intentos');
     }
 
-    private static function call($payload, $logId = '')
+    private static function call($payload)
     {
         $url = GROQ_API_BASE . '/chat/completions';
         $json = json_encode($payload);
 
-        error_log("[Groq:{$logId}] curl_init => {$url}");
-        error_log("[Groq:{$logId}] payload size: " . strlen($json) . " bytes");
-        error_log("[Groq:{$logId}] API key (primeros 8): " . substr(GROQ_API_KEY, 0, 8) . "...");
+        self::log("curl_init => {$url}");
+        self::log("payload size: " . strlen($json) . " bytes");
+        self::log("API key (primeros 8): " . substr(GROQ_API_KEY, 0, 8) . "...");
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -62,7 +76,7 @@ class GroqAPI
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         ]);
 
-        error_log("[Groq:{$logId}] Antes de curl_exec...");
+        self::log('Antes de curl_exec...');
         $start = microtime(true);
         $response = curl_exec($ch);
         $elapsed = round(microtime(true) - $start, 2);
@@ -71,30 +85,30 @@ class GroqAPI
         $info = curl_getinfo($ch);
         curl_close($ch);
 
-        error_log("[Groq:{$logId}] Despues de curl_exec: tiempo={$elapsed}s, http_code={$httpCode}, error=" . ($error ?: '(ninguno)'));
-        error_log("[Groq:{$logId}] Curl info: total_time={$info['total_time']}, connect_time={$info['connect_time']}, namelookup_time={$info['namelookup_time']}, pretransfer_time={$info['pretransfer_time']}, starttransfer_time={$info['starttransfer_time']}");
+        self::log("Despues de curl_exec: tiempo={$elapsed}s, http_code={$httpCode}");
+        self::log("tiempos: lookup={$info['namelookup_time']}s, connect={$info['connect_time']}s, ssl={$info['pretransfer_time']}s, transfer={$info['starttransfer_time']}s, total={$info['total_time']}s");
 
         if ($error) {
-            error_log("[Groq:{$logId}] Error conexion: {$error}");
+            self::log("Error conexion: {$error}");
             return false;
         }
 
         if ($httpCode === 429) {
-            error_log("[Groq:{$logId}] Rate limit (429)");
+            self::log('Rate limit (429)');
             return false;
         }
 
         if ($httpCode !== 200) {
             $data = @json_decode($response, true);
             $msg = ($data['error']['message'] ?? 'HTTP ' . $httpCode);
-            error_log("[Groq:{$logId}] Error HTTP {$httpCode}: {$msg}");
+            self::log("Error HTTP {$httpCode}: {$msg}");
             throw new Exception("Groq Error ({$httpCode}): {$msg}");
         }
 
         $data = json_decode($response, true);
         $text = $data['choices'][0]['message']['content'] ?? null;
         if (!$text) {
-            error_log("[Groq:{$logId}] Respuesta vacia");
+            self::log('Respuesta vacia');
             throw new Exception('Respuesta vacia de Groq');
         }
 

@@ -137,6 +137,14 @@ try {
     echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
     flush();
     $tocResponse = API::generateText($tocPrompt);
+    if (class_exists('GroqAPI')) {
+        echo "<script>console.log('=== DEBUG GROQ TOC ===');\n";
+        foreach (GroqAPI::getDebugLog() as $line) {
+            echo "console.log(" . json_encode($line) . ");\n";
+        }
+        echo "console.log('=== FIN DEBUG ===');\n</script>\n";
+        flush();
+    }
 
     $capitulos = [];
     $lines = explode("\n", trim($tocResponse));
@@ -193,6 +201,14 @@ try {
         echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
         flush();
         $response = API::generateText($textPrompt);
+        if (class_exists('GroqAPI')) {
+            echo "<script>console.log('=== DEBUG GROQ CAPITULO " . ($i+1) . " ===');\n";
+            foreach (GroqAPI::getDebugLog() as $line) {
+                echo "console.log(" . json_encode($line) . ");\n";
+            }
+            echo "console.log('=== FIN DEBUG ===');\n</script>\n";
+            flush();
+        }
 
         $parts = explode('[IMAGE_PROMPT]', $response);
         $texto = trim($parts[0]);
