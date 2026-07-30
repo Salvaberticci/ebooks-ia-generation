@@ -134,6 +134,8 @@ try {
         . "Devuelve SOLO los titulos de los capitulos, uno por linea, numerados del 1 al {$numCapitulos}. "
         . "Escribe en {$idiomaPrompt}.";
 
+    echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
+    flush();
     $tocResponse = API::generateText($tocPrompt);
 
     $capitulos = [];
@@ -188,6 +190,8 @@ try {
             . "para que una IA genere una imagen que represente visualmente el contenido de este capitulo. "
             . "Describe colores, composicion, estilo artistico y elementos clave.";
 
+        echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
+        flush();
         $response = API::generateText($textPrompt);
 
         $parts = explode('[IMAGE_PROMPT]', $response);

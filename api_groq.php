@@ -50,11 +50,8 @@ class GroqAPI
             ],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => API_TIMEOUT,
-            CURLOPT_CONNECTTIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_TCP_KEEPALIVE => 1,
-            CURLOPT_TCP_KEEPIDLE => 30,
-            CURLOPT_TCP_KEEPINTVL => 10,
             CURLOPT_HEADERFUNCTION => function($curl, $header) use (&$responseHeaders) {
                 $responseHeaders[] = $header;
                 return strlen($header);
