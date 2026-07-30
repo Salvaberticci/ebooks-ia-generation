@@ -136,14 +136,17 @@ try {
 
     echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
     flush();
-    $tocResponse = API::generateText($tocPrompt);
-    if (class_exists('GroqAPI')) {
-        echo "<script>console.log('=== DEBUG GROQ TOC ===');\n";
-        foreach (GroqAPI::getDebugLog() as $line) {
-            echo "console.log(" . json_encode($line) . ");\n";
+    try {
+        $tocResponse = API::generateText($tocPrompt);
+    } finally {
+        if (class_exists('GroqAPI')) {
+            echo "<script>console.log('=== DEBUG GROQ TOC ===');\n";
+            foreach (GroqAPI::getDebugLog() as $line) {
+                echo "console.log(" . json_encode($line) . ");\n";
+            }
+            echo "console.log('=== FIN DEBUG ===');\n</script>\n";
+            flush();
         }
-        echo "console.log('=== FIN DEBUG ===');\n</script>\n";
-        flush();
     }
 
     $capitulos = [];
@@ -200,14 +203,17 @@ try {
 
         echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
         flush();
-        $response = API::generateText($textPrompt);
-        if (class_exists('GroqAPI')) {
-            echo "<script>console.log('=== DEBUG GROQ CAPITULO " . ($i+1) . " ===');\n";
-            foreach (GroqAPI::getDebugLog() as $line) {
-                echo "console.log(" . json_encode($line) . ");\n";
+        try {
+            $response = API::generateText($textPrompt);
+        } finally {
+            if (class_exists('GroqAPI')) {
+                echo "<script>console.log('=== DEBUG GROQ CAPITULO " . ($i+1) . " ===');\n";
+                foreach (GroqAPI::getDebugLog() as $line) {
+                    echo "console.log(" . json_encode($line) . ");\n";
+                }
+                echo "console.log('=== FIN DEBUG ===');\n</script>\n";
+                flush();
             }
-            echo "console.log('=== FIN DEBUG ===');\n</script>\n";
-            flush();
         }
 
         $parts = explode('[IMAGE_PROMPT]', $response);
