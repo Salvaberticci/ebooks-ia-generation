@@ -18,7 +18,7 @@ function generarPDF($tema, $contenido, $idioma = 'es', $themeId = 'cyberpunk', $
     $pdf->SetAuthor('Inteligencia Artificial');
     $pdf->SetTitle($temaNombre);
     $pdf->SetMargins(25, 25, 25);
-    $pdf->SetAutoPageBreak(true, 30);
+    $pdf->SetAutoPageBreak(false);
     $pdf->setImageScale(1.5);
 
     // ============ PORTADA UNIFICADA (imagen IA a pantalla completa) ============
@@ -97,27 +97,13 @@ function generarPDF($tema, $contenido, $idioma = 'es', $themeId = 'cyberpunk', $
     $pdf->SetFont('helvetica', 'I', 10);
     $pdf->Cell(0, 6, 'Generado por Inteligencia Artificial', 0, 1, 'C');
 
-    // 9. Barra inferior con metadatos
-    $pdf->SetFillColor(0, 0, 0);
-    $pdf->SetAlpha(0.65);
-    $pdf->Rect(0, 265, $coverW, 32, 'F');
-    $pdf->SetAlpha(1);
-
-    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
-    $pdf->Rect(0, 265, $coverW, 1, 'F');
-
-    $pdf->SetY(268);
-    $pdf->SetFont('helvetica', '', 8);
-    $pdf->SetTextColor(180, 180, 180);
-    $pdf->Cell(0, 5, 'Estilo: ' . ($THEMES[$themeId]['name'] ?? 'Personalizado') . '  |  Generado con Groq + Llama 3.3 70B · Pollinations.ai', 0, 1, 'C');
-    $pdf->SetFont('helvetica', 'B', 8);
-    $pdf->SetTextColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
-    $pdf->Cell(0, 5, date('d/m/Y'), 0, 1, 'C');
-
     // ============ INDICE ============
+    $pdf->SetAutoPageBreak(true, 30);
     $pdf->AddPage();
-    $pdf->SetFillColor($t['bg'][0], $t['bg'][1], $t['bg'][2]);
-    $pdf->Rect(0, 0, 210, 297, 'F');
+    if (isset($t['bg']) && $t['bg'] !== [255, 255, 255]) {
+        $pdf->SetFillColor($t['bg'][0], $t['bg'][1], $t['bg'][2]);
+        $pdf->Rect(0, 0, 210, 297, 'F');
+    }
 
     // TOC header
     $pdf->SetY(25);
@@ -159,7 +145,7 @@ function generarPDF($tema, $contenido, $idioma = 'es', $themeId = 'cyberpunk', $
         $pdf->AddPage();
 
         // Page background
-        if (empty($customColors) && !in_array($themeId, ['minimalist', 'corporate', 'nature', 'sunset', 'ocean'])) {
+        if (isset($t['bg']) && $t['bg'] !== [255, 255, 255]) {
             $pdf->SetFillColor($t['bg'][0], $t['bg'][1], $t['bg'][2]);
             $pdf->Rect(0, 0, 210, 297, 'F');
         }
@@ -215,7 +201,7 @@ function generarPDF($tema, $contenido, $idioma = 'es', $themeId = 'cyberpunk', $
             $checkY = $pdf->GetY();
             if ($checkY > 200) {
                 $pdf->AddPage();
-                if (empty($customColors) && !in_array($themeId, ['minimalist', 'corporate', 'nature', 'sunset', 'ocean'])) {
+                if (isset($t['bg']) && $t['bg'] !== [255, 255, 255]) {
                     $pdf->SetFillColor($t['bg'][0], $t['bg'][1], $t['bg'][2]);
                     $pdf->Rect(0, 0, 210, 297, 'F');
                 }
@@ -227,7 +213,13 @@ function generarPDF($tema, $contenido, $idioma = 'es', $themeId = 'cyberpunk', $
             $imgData = '@' . $item['imagen'];
             $imgW = 120;
             $x = ($pdf->getPageWidth() - $imgW) / 2;
-            $pdf->Image($imgData, $x, '', $imgW, 0, '', '', 'C', false, 200);
+            
+            // Image border (slightly larger rect behind the image)
+            $pdf->SetFillColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
+            $borderW = 2; // 2mm border
+            $pdf->Rect($x - $borderW, $pdf->GetY() - $borderW, $imgW + ($borderW * 2), $imgW + ($borderW * 2), 'F');
+            
+            $pdf->Image($imgData, $x, '', $imgW, $imgW, '', '', 'C', false, 200);
 
             $pdf->Ln(2);
             $pdf->SetFont('helvetica', 'I', 7.5);

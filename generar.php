@@ -198,8 +198,8 @@ try {
             . "Escribe en {$idiomaPrompt} con parrafos bien estructurados. "
             . "NO incluyas el titulo del capitulo en la respuesta, solo el contenido.\n\n"
             . "IMPORTANTE: Al final de tu respuesta, agrega '[IMAGE_PROMPT]' seguido de un prompt descriptivo de maximo 3 oraciones SIEMPRE EN INGLES (independientemente del idioma del ebook) "
-            . "para que una IA genere una imagen que represente visualmente el contenido de este capitulo. "
-            . "El prompt debe describir colores, composicion, estilo artistico y elementos visuales clave. "
+            . "para que un modelo de IA dibuje una ilustracion del capitulo. "
+            . "El prompt DEBE describir objetos literales, personas o metaforas visuales claras (ej: 'a glowing microchip connected to a brain', 'a server room with neon lights'). No pidas conceptos abstractos. "
             . "CRITICO: El prompt debe incluir las palabras 'no text, no letters, no words, no typography' al final para evitar cualquier texto en la imagen generada.";
 
         echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
