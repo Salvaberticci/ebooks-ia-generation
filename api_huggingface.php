@@ -85,7 +85,7 @@ class HuggingFaceAPI
     public static function generateCoverImage($titulo, $themeId, $customColors = [])
     {
         $prompt = self::buildImagePrompt(
-            "Professional book cover titled '{$titulo}', elegant typography, beautiful composition",
+            "Professional book cover illustration for a book titled '{$titulo}', beautiful cinematic composition, dramatic lighting, rich colors, abstract art concept representing the subject, no text, no letters, no words, no typography, no title text",
             $themeId, $customColors, 'abstract'
         );
         $aiImg = self::generatePollinationsImage($prompt, 768, 1024);

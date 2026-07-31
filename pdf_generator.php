@@ -21,73 +21,98 @@ function generarPDF($tema, $contenido, $idioma = 'es', $themeId = 'cyberpunk', $
     $pdf->SetAutoPageBreak(true, 30);
     $pdf->setImageScale(1.5);
 
-    // ============ PORTADA PRINCIPAL ============
+    // ============ PORTADA UNIFICADA (imagen IA a pantalla completa) ============
     $pdf->AddPage();
     $coverW = 210; $coverH = 297;
 
-    // Background gradient simulation with rectangles
-    $pdf->SetFillColor($t['cover_bg1'][0], $t['cover_bg1'][1], $t['cover_bg1'][2]);
-    $pdf->Rect(0, 0, $coverW, $coverH, 'F');
-
-    // Decorative top-right and bottom-left shapes
-    $alpha = 0.06;
-    $pdf->SetFillColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
-    $pdf->Circle(180, 50, 70, 0, 360, 'F', ['width' => 0], [$alpha, $alpha, $alpha]);
-    $pdf->Circle(35, 220, 55, 0, 360, 'F', ['width' => 0], [$alpha, $alpha, $alpha]);
-    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
-    $pdf->Circle(160, 200, 35, 0, 360, 'F', ['width' => 0], [$alpha * 1.2, $alpha * 1.2, $alpha * 1.2]);
-
-    // Accent lines
-    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
-    $pdf->Rect(0, 110, $coverW, 1.2, 'F');
-    $pdf->SetFillColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
-    $pdf->Rect(0, 113, $coverW, 0.6, 'F');
-
-    // Title area - background highlight
-    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
-    $pdf->Rect(25, 130, 160, 35, 'F');
-    $pdf->SetFillColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
-    $pdf->Rect(25, 167, 160, 0.6, 'F');
-
-    // Title text
-    $pdf->SetY(133);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('helvetica', 'B', 22);
-    $pdf->writeHTML('<div style="text-align:center;padding:0 10px;">' . htmlspecialchars($temaNombre) . '</div>');
-
-    // Subtitle
-    $pdf->SetY(178);
-    $pdf->SetTextColor($t['subtitle'][0], $t['subtitle'][1], $t['subtitle'][2]);
-    $pdf->SetFont('helvetica', '', 11);
-    $pdf->Cell(0, 7, 'Generado por Inteligencia Artificial', 0, 1, 'C');
-    $pdf->SetFont('helvetica', 'I', 9);
-    $pdf->SetTextColor($t['footer'][0], $t['footer'][1], $t['footer'][2]);
-    $pdf->Cell(0, 6, date('d/m/Y'), 0, 1, 'C');
-
-    // Info bar at bottom
-    $pdf->SetY(260);
-    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
-    $pdf->Rect(0, 260, $coverW, 1, 'F');
-    $pdf->SetY(265);
-    $pdf->SetFont('helvetica', '', 8);
-    $pdf->SetTextColor($t['subtitle'][0], $t['subtitle'][1], $t['subtitle'][2]);
-    $pdf->Cell(0, 5, 'Estilo: ' . ($THEMES[$themeId]['name'] ?? 'Personalizado'), 0, 1, 'C');
-    $pdf->Cell(0, 5, 'Generado con Groq + Llama 3.3 70B | Pollinations.ai', 0, 1, 'C');
-
-    $pages = count($contenido) + 3;
-
-    // ============ PORTADA IMAGEN ============
-    $pdf->AddPage();
-    $pdf->SetFillColor($t['cover_bg1'][0], $t['cover_bg1'][1], $t['cover_bg1'][2]);
-    $pdf->Rect(0, 0, 210, 297, 'F');
-
+    // 1. Generar imagen de portada IA
     $coverImg = HuggingFaceAPI::generateCoverImage($temaNombre, $themeId, $customColors);
+
     if ($coverImg) {
+        // Imagen IA como fondo full-page (210x297 mm desde 0,0)
         $imgData = '@' . $coverImg;
-        $imgW = 150;
-        $x = ($pdf->getPageWidth() - $imgW) / 2;
-        $pdf->Image($imgData, $x, 25, $imgW, 0, '', '', 'C', false, 150);
+        $pdf->Image($imgData, 0, 0, $coverW, $coverH, '', '', '', false, 150);
+    } else {
+        // Fallback: fondo degradado + formas decorativas
+        $pdf->SetFillColor($t['cover_bg1'][0], $t['cover_bg1'][1], $t['cover_bg1'][2]);
+        $pdf->Rect(0, 0, $coverW, $coverH, 'F');
+        $alpha = 0.06;
+        $pdf->SetFillColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
+        $pdf->Circle(180, 50, 70, 0, 360, 'F', ['width' => 0], [$alpha, $alpha, $alpha]);
+        $pdf->Circle(35, 220, 55, 0, 360, 'F', ['width' => 0], [$alpha, $alpha, $alpha]);
+        $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
+        $pdf->Circle(160, 200, 35, 0, 360, 'F', ['width' => 0], [$alpha * 1.2, $alpha * 1.2, $alpha * 1.2]);
     }
+
+    // 2. Overlay oscuro semi-transparente sobre toda la página para legibilidad del texto
+    // Capa superior (banda degradada fuerte)
+    $pdf->SetFillColor(0, 0, 0);
+    $pdf->SetAlpha(0.55);
+    $pdf->Rect(0, 0, $coverW, $coverH, 'F');
+    $pdf->SetAlpha(1);
+
+    // 3. Banda de color del tema en la parte superior (delgada, estética)
+    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
+    $pdf->SetAlpha(0.9);
+    $pdf->Rect(0, 0, $coverW, 4, 'F');
+    $pdf->SetFillColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
+    $pdf->Rect(0, 4, $coverW, 1.2, 'F');
+    $pdf->SetAlpha(1);
+
+    // 4. Caja semi-transparente del tema al fondo del título
+    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
+    $pdf->SetAlpha(0.75);
+    $pdf->Rect(20, 115, 170, 5, 'F');
+    $pdf->SetAlpha(1);
+
+    // 5. Etiqueta "EBOOK" (pequeña, arriba del título)
+    $pdf->SetXY(20, 105);
+    $pdf->SetTextColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->SetAlpha(0.95);
+    $letter_spacing_html = '<span style="letter-spacing:4px;font-size:9px;color:rgb('
+        . $t['accent2'][0] . ',' . $t['accent2'][1] . ',' . $t['accent2'][2] . ');">E B O O K</span>';
+    $pdf->writeHTML('<div style="text-align:center;">' . $letter_spacing_html . '</div>');
+    $pdf->SetAlpha(1);
+
+    // 6. Título principal grande y centrado
+    $pdf->SetY(122);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetFont('helvetica', 'B', 26);
+    $pdf->writeHTML('<div style="text-align:center;color:#ffffff;line-height:1.3;padding:0 15px;">'
+        . htmlspecialchars($temaNombre) . '</div>');
+
+    // 7. Línea decorativa bajo el título
+    $titleBottom = $pdf->GetY() + 4;
+    $pdf->SetDrawColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
+    $pdf->SetLineWidth(0.8);
+    $pdf->Line(50, $titleBottom, 160, $titleBottom);
+    $pdf->SetDrawColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
+    $pdf->SetLineWidth(0.4);
+    $pdf->Line(70, $titleBottom + 2.5, 140, $titleBottom + 2.5);
+
+    // 8. Subtítulo "Generado por Inteligencia Artificial"
+    $pdf->SetY($titleBottom + 10);
+    $pdf->SetTextColor(220, 220, 220);
+    $pdf->SetFont('helvetica', 'I', 10);
+    $pdf->Cell(0, 6, 'Generado por Inteligencia Artificial', 0, 1, 'C');
+
+    // 9. Barra inferior con metadatos
+    $pdf->SetFillColor(0, 0, 0);
+    $pdf->SetAlpha(0.65);
+    $pdf->Rect(0, 265, $coverW, 32, 'F');
+    $pdf->SetAlpha(1);
+
+    $pdf->SetFillColor($t['accent'][0], $t['accent'][1], $t['accent'][2]);
+    $pdf->Rect(0, 265, $coverW, 1, 'F');
+
+    $pdf->SetY(268);
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetTextColor(180, 180, 180);
+    $pdf->Cell(0, 5, 'Estilo: ' . ($THEMES[$themeId]['name'] ?? 'Personalizado') . '  |  Generado con Groq + Llama 3.3 70B · Pollinations.ai', 0, 1, 'C');
+    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->SetTextColor($t['accent2'][0], $t['accent2'][1], $t['accent2'][2]);
+    $pdf->Cell(0, 5, date('d/m/Y'), 0, 1, 'C');
 
     // ============ INDICE ============
     $pdf->AddPage();

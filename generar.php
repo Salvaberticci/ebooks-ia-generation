@@ -197,9 +197,10 @@ try {
             . "El contenido debe ser educativo, detallado y de aproximadamente " . WORDS_PER_CHAPTER . " palabras. "
             . "Escribe en {$idiomaPrompt} con parrafos bien estructurados. "
             . "NO incluyas el titulo del capitulo en la respuesta, solo el contenido.\n\n"
-            . "IMPORTANTE: Al final de tu respuesta, agrega '[IMAGE_PROMPT]' seguido de un prompt detallado de maximo 3 oraciones en {$idiomaPrompt} "
+            . "IMPORTANTE: Al final de tu respuesta, agrega '[IMAGE_PROMPT]' seguido de un prompt descriptivo de maximo 3 oraciones SIEMPRE EN INGLES (independientemente del idioma del ebook) "
             . "para que una IA genere una imagen que represente visualmente el contenido de este capitulo. "
-            . "Describe colores, composicion, estilo artistico y elementos clave.";
+            . "El prompt debe describir colores, composicion, estilo artistico y elementos visuales clave. "
+            . "CRITICO: El prompt debe incluir las palabras 'no text, no letters, no words, no typography' al final para evitar cualquier texto en la imagen generada.";
 
         echo "            <div><span class='muted'>> Conectando con API...</span></div>\n";
         flush();
@@ -233,7 +234,7 @@ try {
                 echo "            <div><span class='info'>  --></span> Generando imagen...</div>\n";
                 flush();
 
-                $imgPromptFinal = $imagePrompt ?: "Ilustracion para capitulo '{$tituloClean}' sobre {$tema}, estilo {$imgStyle}, diseno profesional";
+                $imgPromptFinal = $imagePrompt ?: "Conceptual illustration for a chapter about '{$tituloClean}', topic: {$tema}, {$imgStyle} style, professional design, no text, no letters, no words, no typography";
                 $imgData = HuggingFaceAPI::generatePollinationsImage($imgPromptFinal, 768, 768);
                 if ($imgData) {
                     $im = @imagecreatefromstring($imgData);
